@@ -7,11 +7,24 @@ async function checkSecurity() {
         return;
     }
 
-    // إعداد الطلب لجلب البيانات من API
-    const apiURL = "https://cveawg.mitre.org/api/cves/"; // مثال API للثغرات
+    // رابط الـ API (مثال لرابط ديناميكي)
+    const apiURL = `https://api.example.com/vulnerabilities?company=${encodeURIComponent(companyName)}`;
+
     try {
+        // جلب البيانات من API
         const response = await fetch(apiURL);
+        if (!response.ok) {
+            throw new Error("حدث خطأ أثناء الاتصال بـ API");
+        }
+
         const data = await response.json();
+
+        // إذا لم يتم العثور على نتائج
+        if (data.length === 0) {
+            resultsSection.innerHTML = `<p style="color: red;">لا توجد ثغرات معروفة لهذه الشركة.</p>`;
+            resultsSection.style.display = "block";
+            return;
+        }
 
         // عرض البيانات
         let output = `<h3>نتائج فحص ${companyName}</h3>`;
@@ -21,6 +34,7 @@ async function checkSecurity() {
                     <h4 style="color: red;">${vulnerability.id}</h4>
                     <p>${vulnerability.description}</p>
                     <p><strong>درجة الخطورة:</strong> ${vulnerability.severity}</p>
+                    <p><strong>طريقة الحل:</strong> ${vulnerability.solution}</p>
                 </div>
             `;
         });
