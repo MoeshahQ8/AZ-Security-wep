@@ -1,48 +1,45 @@
 async function checkSecurity() {
-    const companyName = document.getElementById("companyName").value;
+    const companyUrl = document.getElementById("companyUrl").value;
     const resultsSection = document.getElementById("resultsSection");
-    
-    if (companyName === "") {
-        alert("يرجى إدخال اسم الشركة");
+
+    if (companyUrl === "") {
+        alert("يرجى إدخال رابط الشركة");
         return;
     }
 
-    // رابط الـ API (مثال لرابط ديناميكي)
-    const apiURL = `https://api.example.com/vulnerabilities?company=${encodeURIComponent(companyName)}`;
+    // إعداد الطلب إلى OpenAI API لتحليل الرابط
+    const apiKey = "YOUR_OPENAI_API_KEY"; // ضع مفتاح OpenAI الخاص بك هنا
+    const apiURL = "https://api.openai.com/v1/completions";
 
     try {
-        // جلب البيانات من API
-        const response = await fetch(apiURL);
+        const response = await fetch(apiURL, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "Authorization": `Bearer ${apiKey}`
+            },
+            body: JSON.stringify({
+                model: "text-davinci-003", // يمكنك اختيار نموذج آخر حسب احتياجك
+                prompt: `حلل الرابط التالي: ${companyUrl}. ما هي الثغرات الأمنية المحتملة وكيف يمكن حلها؟`,
+                max_tokens: 500
+            })
+        });
+
         if (!response.ok) {
-            throw new Error("حدث خطأ أثناء الاتصال بـ API");
+            throw new Error("حدث خطأ أثناء الاتصال بخدمة الذكاء الاصطناعي");
         }
 
         const data = await response.json();
 
-        // إذا لم يتم العثور على نتائج
-        if (data.length === 0) {
-            resultsSection.innerHTML = `<p style="color: red;">لا توجد ثغرات معروفة لهذه الشركة.</p>`;
-            resultsSection.style.display = "block";
-            return;
-        }
+        // عرض النتائج
+        resultsSection.innerHTML = `
+            <h3>تحليل الرابط:</h3>
+            <p>${data.choices[0].text.trim()}</p>
+        `;
+        resultsSection.style.display = "block";
 
-        // عرض البيانات
-        let output = `<h3>نتائج فحص ${companyName}</h3>`;
-        data.forEach(vulnerability => {
-            output += `
-                <div style="margin-bottom: 20px;">
-                    <h4 style="color: red;">${vulnerability.id}</h4>
-                    <p>${vulnerability.description}</p>
-                    <p><strong>درجة الخطورة:</strong> ${vulnerability.severity}</p>
-                    <p><strong>طريقة الحل:</strong> ${vulnerability.solution}</p>
-                </div>
-            `;
-        });
-
-        resultsSection.innerHTML = output;
     } catch (error) {
-        resultsSection.innerHTML = `<p style="color: red;">حدث خطأ أثناء جلب البيانات. حاول مجددًا لاحقًا.</p>`;
+        resultsSection.innerHTML = `<p style="color: red;">حدث خطأ أثناء جلب البيانات: ${error.message}</p>`;
+        resultsSection.style.display = "block";
     }
-
-    resultsSection.style.display = "block";
 }
